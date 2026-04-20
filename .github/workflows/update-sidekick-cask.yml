@@ -1,0 +1,150 @@
+name: Update sidekick cask
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 6,23 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-cask:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out tap
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Fetch latest release metadata
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: johnbean393/Sidekick
+        run: |
+          set -euo pipefail
+
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "repos/${REPO}/releases" > releases.json
+
+          release_json="$(
+            jq -cer '
+              map(
+                select(.draft == false)
+                | select((.assets // []) | map(.name | test("\\.dmg$")) | any)
+              )
+              | first
+            ' releases.json
+          )"
+
+          if [ -z "$release_json" ] || [ "$release_json" = "null" ]; then
+            echo "No eligible release with a .dmg asset found."
+            exit 1
+          fi
+
+          tag="$(jq -r '.tag_name' <<<"$release_json")"
+
+          asset_json="$(
+            jq -cer '
+              .assets
+              | map(select(.name | test("\\.dmg$")))
+              | first
+            ' <<<"$release_json"
+          )"
+
+          if [ -z "$asset_json" ] || [ "$asset_json" = "null" ]; then
+            echo "No .dmg asset found in selected release."
+            exit 1
+          fi
+
+          asset_name="$(jq -r '.name' <<<"$asset_json")"
+          browser_url="$(jq -r '.browser_download_url' <<<"$asset_json")"
+          digest="$(jq -r '.digest // empty' <<<"$asset_json")"
+
+          if [ -z "$digest" ]; then
+            echo "Release asset digest is missing."
+            exit 1
+          fi
+
+          if [[ "$digest" != sha256:* ]]; then
+            echo "Unexpected digest format: $digest"
+            exit 1
+          fi
+
+          sha256="${digest#sha256:}"
+
+          {
+            echo "tag=$tag"
+            echo "asset_name=$asset_name"
+            echo "browser_url=$browser_url"
+            echo "sha256=$sha256"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update cask file
+        env:
+          VERSION: ${{ steps.release.outputs.tag }}
+          SHA256: ${{ steps.release.outputs.sha256 }}
+          URL: ${{ steps.release.outputs.browser_url }}
+          CASK_FILE: Casks/sidekick.rb
+        run: |
+          set -euo pipefail
+
+          ruby <<'RUBY'
+          file = ENV.fetch("CASK_FILE")
+          version = ENV.fetch("VERSION")
+          sha256 = ENV.fetch("SHA256")
+          url = ENV.fetch("URL")
+
+          text = File.read(file)
+
+          text.sub!(
+            /^\s*version\s+"[^"]+"$/,
+            %(  version "#{version}")
+          )
+
+          text.sub!(
+            /^\s*sha256\s+"[^"]+"$/,
+            %(  sha256 "#{sha256}")
+          )
+
+          text.sub!(
+            /^\s*url\s+"[^"]+",\s*$/,
+            %(  url "#{url}",)
+          )
+
+          File.write(file, text)
+          RUBY
+
+      - name: Audit cask
+        run: |
+          brew audit --cask --online ./Casks/sidekick.rb
+
+      - name: Check for changes
+        id: changes
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- Casks/sidekick.rb; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected:"
+            git diff -- Casks/sidekick.rb
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git add Casks/sidekick.rb
+          git commit -m "Bump Sidekick to ${VERSION}"
+          git push
