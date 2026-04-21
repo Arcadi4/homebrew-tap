@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@main
 
       - name: Fetch latest release metadata
         id: release
@@ -139,6 +139,12 @@ jobs:
             git diff -- Casks/sidekick.rb
           fi
 
+      - name: Check out tap
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          
       - name: Commit and push
         if: steps.changes.outputs.changed == 'true'
         env:
