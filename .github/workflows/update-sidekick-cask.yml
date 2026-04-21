@@ -124,7 +124,7 @@ jobs:
 
       - name: Audit cask
         run: |
-          brew audit --cask --online ./Casks/sidekick.rb
+          brew audit --cask --online arcadi4/tap/sidekick
 
       - name: Check for changes
         id: changes
