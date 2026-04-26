@@ -104,14 +104,29 @@ jobs:
 
           text = File.read(file)
 
-          text.sub!(
+          def replace!(text, pattern, replacement, description)
+            text.sub!(pattern, replacement) || abort("Could not update #{description} in cask file.")
+          end
+
+          replace!(
+            text,
             /^\s*version\s+"[^"]+"$/,
-            %(  version "#{version}")
+            %(  version "#{version}"),
+            "version"
           )
 
-          text.sub!(
-            /^\s*sha256\s+arm:\s+"[0-9a-f]+",\n\s*intel:\s+"[0-9a-f]+"$/,
-            %(  sha256 arm:   "#{sha256_arm}",\n         intel: "#{sha256_intel}")
+          replace!(
+            text,
+            /^\s*on_arm do\n\s*sha256\s+"[0-9a-f]+"\n\n\s*url\s+"https:\/\/github\.com\/badlogic\/pi-mono\/releases\/download\/v#\{version\}\/pi-darwin-arm64\.tar\.gz"\n\s*end$/,
+            %(  on_arm do\n    sha256 "#{sha256_arm}"\n\n    url "https://github.com/badlogic/pi-mono/releases/download/v\#{version}/pi-darwin-arm64.tar.gz"\n  end),
+            "arm64 checksum"
+          )
+
+          replace!(
+            text,
+            /^\s*on_intel do\n\s*sha256\s+"[0-9a-f]+"\n\n\s*url\s+"https:\/\/github\.com\/badlogic\/pi-mono\/releases\/download\/v#\{version\}\/pi-darwin-x64\.tar\.gz"\n\s*end$/,
+            %(  on_intel do\n    sha256 "#{sha256_intel}"\n\n    url "https://github.com/badlogic/pi-mono/releases/download/v\#{version}/pi-darwin-x64.tar.gz"\n  end),
+            "x64 checksum"
           )
 
           File.write(file, text)
@@ -119,7 +134,7 @@ jobs:
 
       - name: Audit cask
         run: |
-          brew audit --cask --new --no-signing --arch=all arcadi4/tap/pi-mono
+          brew audit --cask --new --no-signing arcadi4/tap/pi-mono
 
       - name: Check for changes
         id: changes
@@ -138,10 +153,11 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         env:
           VERSION: ${{ steps.release.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Casks/pi-mono.rb
           git commit -m "Bump pi-mono to ${VERSION}"
-          git push origin HEAD:main
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
