@@ -1,0 +1,132 @@
+name: Update markitdown formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Specific markitdown version to publish (leave blank for latest)"
+        required: false
+        type: string
+  schedule:
+    - cron: "45 7,22 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out tap
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Fetch latest PyPI metadata
+        id: pypi
+        env:
+          PACKAGE: markitdown
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${REQUESTED_VERSION}" ]; then
+            metadata_url="https://pypi.org/pypi/${PACKAGE}/${REQUESTED_VERSION}/json"
+          else
+            metadata_url="https://pypi.org/pypi/${PACKAGE}/json"
+          fi
+
+          curl --fail --location --silent --show-error "${metadata_url}" --output pypi.json
+
+          version="$(jq -r '.info.version' pypi.json)"
+          sdist_json="$(jq -cer '.urls | map(select(.packagetype == "sdist")) | first' pypi.json)"
+
+          if [ -z "${sdist_json}" ] || [ "${sdist_json}" = "null" ]; then
+            echo "No source distribution found for ${PACKAGE} ${version}." >&2
+            exit 1
+          fi
+
+          url="$(jq -r '.url' <<<"${sdist_json}")"
+          sha256="$(jq -r '.digests.sha256' <<<"${sdist_json}")"
+
+          if [ -z "${url}" ] || [ -z "${sha256}" ] || [ "${sha256}" = "null" ]; then
+            echo "PyPI metadata is missing url or sha256 for ${PACKAGE} ${version}." >&2
+            exit 1
+          fi
+
+          {
+            echo "version=${version}"
+            echo "url=${url}"
+            echo "sha256=${sha256}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Update formula file
+        env:
+          FORMULA_FILE: Formula/markitdown.rb
+          URL: ${{ steps.pypi.outputs.url }}
+          SHA256: ${{ steps.pypi.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+
+          ruby <<'RUBY'
+          file = ENV.fetch("FORMULA_FILE")
+          url = ENV.fetch("URL")
+          sha256 = ENV.fetch("SHA256")
+
+          text = File.read(file)
+
+          text.sub!(
+            /^  url "https:\/\/files\.pythonhosted\.org\/packages\/[^\"]+\/markitdown-[^\"]+\.tar\.gz"$/,
+            %(  url "#{url}")
+          ) || abort("Could not update markitdown source URL in formula file.")
+
+          text.sub!(
+            /^  sha256 "[0-9a-f]{64}"$/,
+            %(  sha256 "#{sha256}")
+          ) || abort("Could not update markitdown source checksum in formula file.")
+
+          File.write(file, text)
+          RUBY
+
+      - name: Check for changes
+        id: changes
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- Formula/markitdown.rb; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            echo "No changes detected."
+          else
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+            echo "Changes detected:"
+            git diff -- Formula/markitdown.rb
+          fi
+
+      - name: Audit formula
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          brew audit --formula --new arcadi4/tap/markitdown
+
+      - name: Install and test formula
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          brew install --build-from-source arcadi4/tap/markitdown
+          brew test arcadi4/tap/markitdown
+          brew uninstall markitdown
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          VERSION: ${{ steps.pypi.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/markitdown.rb
+          git commit -m "Bump markitdown to ${VERSION}"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
