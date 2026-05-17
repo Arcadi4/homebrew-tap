@@ -19,6 +19,7 @@ brew install <name>
 | Name | Description |
 | --- | --- |
 | `cliproxyapi-yumetsuki` | More stable branch of CLIProxyAPI maintained by [@Hoshino-Yumetsuki](https://github.com/Hoshino-Yumetsuki). |
+| `kiro.rs` | Anthropic-compatible API proxy service for Kiro. |
 | `markitdown` | Convert files to Markdown for LLMs and text analysis. |
 
 ## Casks
