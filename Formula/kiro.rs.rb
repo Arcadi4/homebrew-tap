@@ -1,35 +1,23 @@
 class KiroRs < Formula
   desc "Expose Kiro as an Anthropic-compatible API service"
-  homepage "https://github.com/BenedictKing/kiro.rs"
+  homepage "https://github.com/Hoshino-Yumetsuki/kiro.rs"
+  url "https://github.com/Hoshino-Yumetsuki/kiro.rs/archive/dbc084b75e4eda5bce37d3e096c1ca8cd1b7dff5.tar.gz"
   version "1.1.30"
+  sha256 "c024c493ff8564a6966440e2a3de041a8b20782259c23ae3e7f238e7239fa100"
   license "MIT"
 
-  on_macos do
-    on_arm do
-      url "https://github.com/BenedictKing/kiro.rs/releases/download/v#{version}/kiro-rs-darwin-arm64"
-      sha256 "936e970f166aa3bf16bad1c0bc4afb79649068112612d84b97230132d0330e06"
-    end
-
-    on_intel do
-      url "https://github.com/BenedictKing/kiro.rs/releases/download/v#{version}/kiro-rs-darwin-amd64"
-      sha256 "f50f0d247b65d1d2da260444bfa1558c970c2dfc06832f6bbf71b01cddd327ae"
-    end
+  livecheck do
+    skip "No versioned releases or tags"
   end
 
-  on_linux do
-    on_arm do
-      url "https://github.com/BenedictKing/kiro.rs/releases/download/v#{version}/kiro-rs-linux-arm64"
-      sha256 "a1bd78ab0879afcbb94676ad3b8e9dc6518f31b742676008d1fb1e72606b1f3e"
-    end
-
-    on_intel do
-      url "https://github.com/BenedictKing/kiro.rs/releases/download/v#{version}/kiro-rs-linux-amd64"
-      sha256 "e28c787853240b40e502613f46473118fc743885598843bbe61de31fe99d09f8"
-    end
-  end
+  depends_on "node" => :build
+  depends_on "rust" => :build
 
   def install
-    bin.install Dir["kiro-rs-*"][0] => "kiro-rs"
+    system "npm", "exec", "--yes", "--package=pnpm@11.1.2", "--", "pnpm", "--dir", "admin-ui", "install",
+           "--frozen-lockfile"
+    system "npm", "exec", "--yes", "--package=pnpm@11.1.2", "--", "pnpm", "--dir", "admin-ui", "build"
+    system "cargo", "install", *std_cargo_args
 
     (buildpath/"config.json").write <<~JSON
       {
