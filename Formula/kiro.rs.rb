@@ -8,9 +8,9 @@ class KiroRs < Formula
   depends_on "rust" => :build
 
   def install
-    system "npm", "exec", "--yes", "--package=pnpm@11.1.2", "--", "pnpm", "--dir", "admin-ui", "install",
+    system "npx", "-y", "--package=pnpm", "--", "pnpm", "--dir", "admin-ui", "install",
            "--frozen-lockfile"
-    system "npm", "exec", "--yes", "--package=pnpm@11.1.2", "--", "pnpm", "--dir", "admin-ui", "build"
+    system "npx", "-y", "--package=pnpm", "--", "pnpm", "--dir", "admin-ui", "build"
     system "cargo", "install", *std_cargo_args
 
     (buildpath/"config.json").write <<~JSON
@@ -22,14 +22,14 @@ class KiroRs < Formula
         "tlsBackend": "rustls"
       }
     JSON
-    (etc/"kiro-rs").install "config.json"
+    (etc/"kiro.rs").install "config.json"
 
     (buildpath/"credentials.json").write "[]\n"
-    (var/"kiro-rs").install "credentials.json" unless (var/"kiro-rs/credentials.json").exist?
+    (var/"kiro.rs").install "credentials.json" unless (var/"kiro.rs/credentials.json").exist?
   end
 
   service do
-    run [opt_bin/"kiro-rs", "--config", etc/"kiro-rs/config.json", "--credentials", var/"kiro-rs/credentials.json"]
+    run [opt_bin/"kiro.rs", "--config", etc/"kiro.rs/config.json", "--credentials", var/"kiro.rs/credentials.json"]
     keep_alive true
     log_path var/"log/kiro-rs.log"
     error_log_path var/"log/kiro-rs.log"
