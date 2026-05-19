@@ -1,14 +1,8 @@
 class KiroRs < Formula
   desc "Expose Kiro as an Anthropic-compatible API service"
   homepage "https://github.com/Hoshino-Yumetsuki/kiro.rs"
-  url "https://github.com/Hoshino-Yumetsuki/kiro.rs/archive/dbc084b75e4eda5bce37d3e096c1ca8cd1b7dff5.tar.gz"
-  version "1.1.30"
-  sha256 "c024c493ff8564a6966440e2a3de041a8b20782259c23ae3e7f238e7239fa100"
   license "MIT"
-
-  livecheck do
-    skip "No versioned releases or tags"
-  end
+  head "https://github.com/Hoshino-Yumetsuki/kiro.rs.git", branch: "master"
 
   depends_on "node" => :build
   depends_on "rust" => :build
@@ -42,7 +36,7 @@ class KiroRs < Formula
   end
 
   test do
-    assert_match version.to_s, shell_output("#{bin}/kiro-rs --version")
+    assert_match(/kiro-rs \d+\.\d+\.\d+/, shell_output("#{bin}/kiro-rs --version"))
 
     port = free_port
     (testpath/"config.json").write <<~JSON
