@@ -5,12 +5,12 @@ class KiroRs < Formula
   head "https://github.com/Hoshino-Yumetsuki/kiro.rs.git", branch: "master"
 
   depends_on "node" => :build
+  depends_on "pnpm" => :build
   depends_on "rust" => :build
 
   def install
-    system "npx", "-y", "--package=pnpm", "--", "pnpm", "--dir", "admin-ui", "install",
-           "--frozen-lockfile"
-    system "npx", "-y", "--package=pnpm", "--", "pnpm", "--dir", "admin-ui", "build"
+    system "pnpm", "--dir", "admin-ui", "install", "--frozen-lockfile"
+    system "pnpm", "--dir", "admin-ui", "build"
     system "cargo", "install", *std_cargo_args
 
     (buildpath/"config.json").write <<~JSON
@@ -29,7 +29,7 @@ class KiroRs < Formula
   end
 
   service do
-    run [opt_bin/"kiro.rs", "--config", etc/"kiro.rs/config.json", "--credentials", var/"kiro.rs/credentials.json"]
+    run [opt_bin/"kiro-rs", "--config", etc/"kiro.rs/config.json", "--credentials", var/"kiro.rs/credentials.json"]
     keep_alive true
     log_path var/"log/kiro-rs.log"
     error_log_path var/"log/kiro-rs.log"
