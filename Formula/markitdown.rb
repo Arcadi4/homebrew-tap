@@ -3,8 +3,8 @@ class Markitdown < Formula
 
   desc "Convert files to Markdown for LLMs and text analysis"
   homepage "https://github.com/microsoft/markitdown"
-  url "https://files.pythonhosted.org/packages/83/93/3b93c291c99d09f64f7535ba74c1c6a3507cf49cffd38983a55de6f834b6/markitdown-0.1.5.tar.gz"
-  sha256 "4c956ff1528bf15e1814542035ec96e989206d19d311bb799f4df973ecafc31a"
+  url "https://files.pythonhosted.org/packages/18/b7/91fe0e2df07107ab701a15c8ad3213135707e4d6206ae9bd8f457a7ad86a/markitdown-0.1.6.tar.gz"
+  sha256 "e5bdbaffd971b29598c7c39ef0e9afce2f08c0751fbfa4e4257678ebaf8cfc7e"
   license "MIT"
 
   depends_on "python@3.13"
@@ -75,8 +75,16 @@ class Markitdown < Formula
   end
 
   resource "onnxruntime" do
-    url "https://files.pythonhosted.org/packages/e0/39/77cefa829740bd830915095d8408dce6d731b244e24b1f64fe3df9f18e86/onnxruntime-1.22.1-cp313-cp313-macosx_13_0_universal2.whl"
-    sha256 "d29c7d87b6cbed8fecfd09dca471832384d12a69e1ab873e5effbb94adc3e966"
+    if OS.mac?
+      url "https://files.pythonhosted.org/packages/e0/39/77cefa829740bd830915095d8408dce6d731b244e24b1f64fe3df9f18e86/onnxruntime-1.22.1-cp313-cp313-macosx_13_0_universal2.whl"
+      sha256 "d29c7d87b6cbed8fecfd09dca471832384d12a69e1ab873e5effbb94adc3e966"
+    elsif Hardware::CPU.arm?
+      url "https://files.pythonhosted.org/packages/d2/a6/444291524cb52875b5de980a6e918072514df63a57a7120bf9dfae3aeed1/onnxruntime-1.22.1-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl"
+      sha256 "460487d83b7056ba98f1f7bac80287224c31d8149b15712b0d6f5078fcc33d0f"
+    else
+      url "https://files.pythonhosted.org/packages/87/9d/45a995437879c18beff26eacc2322f4227224d04c6ac3254dce2e8950190/onnxruntime-1.22.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+      sha256 "b0c37070268ba4e02a1a9d28560cd00cd1e94f0d4f275cbef283854f861a65fa"
+    end
   end
 
   resource "packaging" do
@@ -132,9 +140,17 @@ class Markitdown < Formula
     venv = virtualenv_create(libexec, python3)
     # These resources ship as wheels, so install them from their cached downloads
     # instead of using Homebrew's source-only pip wrapper.
+    onnxruntime_wheel = if OS.mac?
+      "onnxruntime-1.22.1-cp313-cp313-macosx_13_0_universal2.whl"
+    elsif Hardware::CPU.arm?
+      "onnxruntime-1.22.1-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl"
+    else
+      "onnxruntime-1.22.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
+    end
+
     wheel_resources = {
       "flatbuffers" => "flatbuffers-25.12.19-py2.py3-none-any.whl",
-      "onnxruntime" => "onnxruntime-1.22.1-cp313-cp313-macosx_13_0_universal2.whl",
+      "onnxruntime" => onnxruntime_wheel,
     }
 
     venv.pip_install resources.reject { |r| wheel_resources.key?(r.name) }
