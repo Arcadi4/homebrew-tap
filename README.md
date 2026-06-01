@@ -27,5 +27,6 @@ brew install <name>
 | Name | Description |
 | --- | --- |
 | `clashx` | Rule-based proxy utility. |
+| `keytype` | System-wide tab autocomplete utility. |
 | `pi-mono` | AI agent toolkit with CLI, unified LLM API, TUI, and web UI libraries. |
 | `sidekick` | Native macOS app for chatting with a local LLM that can use information from files, folders, and websites on your Mac. |
