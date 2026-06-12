@@ -2,15 +2,16 @@ class KiroRs < Formula
   desc "Expose Kiro as an Anthropic-compatible API service"
   homepage "https://github.com/Hoshino-Yumetsuki/kiro.rs"
   license "MIT"
-  head "https://github.com/Hoshino-Yumetsuki/kiro.rs.git", branch: "master"
+  head "https://github.com/Hoshino-Yumetsuki/kiro.rs/archive/refs/heads/master.tar.gz"
 
   depends_on "node" => :build
-  depends_on "pnpm" => :build
   depends_on "rust" => :build
 
   def install
-    system "pnpm", "--dir", "admin-ui", "install", "--frozen-lockfile"
-    system "pnpm", "--dir", "admin-ui", "build"
+    ENV["COREPACK_ENABLE_DOWNLOAD_PROMPT"] = "0"
+
+    system "npx", "--yes", "--package", "pnpm", "pnpm", "--dir", "admin-ui", "install", "--frozen-lockfile"
+    system "npx", "--yes", "--package", "pnpm", "pnpm", "--dir", "admin-ui", "build"
     system "cargo", "install", *std_cargo_args
 
     (buildpath/"config.json").write <<~JSON
