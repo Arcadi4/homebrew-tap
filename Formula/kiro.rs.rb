@@ -2,7 +2,7 @@ class KiroRs < Formula
   desc "Expose Kiro as an Anthropic-compatible API service"
   homepage "https://github.com/Hoshino-Yumetsuki/kiro.rs"
   license "MIT"
-  head "https://github.com/Hoshino-Yumetsuki/kiro.rs/archive/refs/heads/master.tar.gz"
+  head "https://github.com/Hoshino-Yumetsuki/kiro.rs.git", branch: "master"
 
   depends_on "node" => :build
   depends_on "rust" => :build
