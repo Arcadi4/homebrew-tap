@@ -1,12 +1,12 @@
 cask "pi-mono" do
-  version "0.79.8"
+  version "0.79.9"
   on_arm do
-    sha256 "9b0da243210a4faad9b4abb641cac519ce2d9d28eac6b001b9bf24a1bf84f585"
+    sha256 "9632bf30c89a87e2dc674e2450156806187311d293b0fffbc15077ac51e46d48"
 
     url "https://github.com/badlogic/pi-mono/releases/download/v#{version}/pi-darwin-arm64.tar.gz"
   end
   on_intel do
-    sha256 "29a1a3fe63df336a848704259c801caf55eff39e175905b2fb3086b2280ede20"
+    sha256 "4cdc3990b8091854c97ff4a1792b78c9a2303e6090df6760b5252008d63d61f9"
 
     url "https://github.com/badlogic/pi-mono/releases/download/v#{version}/pi-darwin-x64.tar.gz"
   end
