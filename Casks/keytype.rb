@@ -1,6 +1,6 @@
 cask "keytype" do
-  version "1.5.0"
-  sha256 "44eb79dc112d30f3f19e9c927fa667b01ab7ba40b7a9d16c59d967ebd33eef32"
+  version "1.6.0"
+  sha256 "65f445538d913bd5d01e624d86b1b77a3397e9812a7f47ca356fc9c892a3912b"
 
   url "https://github.com/johnbean393/KeyType/releases/download/v#{version}/KeyType.#{version.major_minor}.dmg"
   name "KeyType"
