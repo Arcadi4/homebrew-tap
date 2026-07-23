@@ -1,4 +1,4 @@
-name: Update sidekick cask
+name: Update sidekick-ai cask
 
 on:
   workflow_dispatch:
@@ -92,7 +92,7 @@ jobs:
           VERSION: ${{ steps.release.outputs.tag }}
           SHA256: ${{ steps.release.outputs.sha256 }}
           URL: ${{ steps.release.outputs.browser_url }}
-          CASK_FILE: Casks/sidekick.rb
+          CASK_FILE: Casks/sidekick-ai.rb
         run: |
           set -euo pipefail
 
@@ -124,19 +124,19 @@ jobs:
 
       - name: Audit cask
         run: |
-          brew audit --cask --online arcadi4/tap/sidekick
+          brew audit --cask --online arcadi4/tap/sidekick-ai
 
       - name: Check for changes
         id: changes
         run: |
           set -euo pipefail
-          if git diff --quiet -- Casks/sidekick.rb; then
+          if git diff --quiet -- Casks/sidekick-ai.rb; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No changes detected."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Changes detected:"
-            git diff -- Casks/sidekick.rb
+            git diff -- Casks/sidekick-ai.rb
           fi
 
       - name: Check out tap
@@ -153,6 +153,6 @@ jobs:
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Casks/sidekick.rb
-          git commit -m "Bump Sidekick to ${VERSION}"
+          git add Casks/sidekick-ai.rb
+          git commit -m "Bump sidekick-ai to ${VERSION}"
           git push origin HEAD:main

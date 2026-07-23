@@ -1,4 +1,4 @@
-cask "sidekick" do
+cask "sidekick-ai" do
   version "1.0.0-rc.18"
   sha256 "1db652cca6617a6da500b96a5841d5c67c22c77637e7203543cb5872183eb794"
   url "https://github.com/johnbean393/Sidekick/releases/download/1.0.0-rc.18/Sidekick.1.0.0-rc.18.dmg",
