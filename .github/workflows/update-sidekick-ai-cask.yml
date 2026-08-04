@@ -102,6 +102,11 @@ jobs:
           sha256 = ENV.fetch("SHA256")
           url = ENV.fetch("URL")
 
+          # Rebuild the URL with #{version} interpolation so Homebrew treats
+          # it as a versioned URL (instead of an unversioned one with a pinned
+          # sha256, which fails `brew audit`).
+          interpolated_url = url.gsub(version, '#{version}')
+
           text = File.read(file)
 
           text.sub!(
@@ -116,7 +121,7 @@ jobs:
 
           text.sub!(
             /^\s*url\s+"[^"]+",\s*$/,
-            %(  url "#{url}",)
+            %(  url "#{interpolated_url}",)
           )
 
           File.write(file, text)
