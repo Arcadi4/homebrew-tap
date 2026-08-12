@@ -144,12 +144,6 @@ jobs:
             git diff -- Casks/sidekick-ai.rb
           fi
 
-      - name: Check out tap
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-          
       - name: Commit and push
         if: steps.changes.outputs.changed == 'true'
         env:
