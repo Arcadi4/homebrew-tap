@@ -22,6 +22,7 @@ brew install <name>
 | `headroom` | Local context compression proxy for LLM applications. |
 | `kiro.rs` | Anthropic-compatible API proxy service for Kiro. |
 | `markitdown` | Convert files to Markdown for LLMs and text analysis. |
+| `pnpm@12` | Fast, disk space efficient package manager (v12 release candidates). |
 
 ## Casks
 
