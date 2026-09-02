@@ -50,6 +50,7 @@ jobs:
           fi
 
           tag="$(jq -r '.tag_name' <<<"$release_json")"
+          version="${tag#v}"
 
           asset_json="$(
             jq -cer '
@@ -79,9 +80,9 @@ jobs:
           fi
 
           sha256="${digest#sha256:}"
-
           {
             echo "tag=$tag"
+            echo "version=$version"
             echo "asset_name=$asset_name"
             echo "browser_url=$browser_url"
             echo "sha256=$sha256"
@@ -89,7 +90,7 @@ jobs:
 
       - name: Update cask file
         env:
-          VERSION: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
           SHA256: ${{ steps.release.outputs.sha256 }}
           URL: ${{ steps.release.outputs.browser_url }}
           CASK_FILE: Casks/sidekick-ai.rb
@@ -109,20 +110,37 @@ jobs:
 
           text = File.read(file)
 
-          text.sub!(
-            /^\s*version\s+"[^"]+"$/,
-            %(  version "#{version}")
+          def replace!(text, pattern, replacement, description)
+            text.sub!(pattern, replacement) || abort("Could not update #{description} in cask file.")
+          end
+
+          replace!(
+            text,
+            /^[ \t]*version[ \t]+"[^"]+"$/,
+            %(  version "#{version}"),
+            "version"
           )
 
-          text.sub!(
-            /^\s*sha256\s+"[^"]+"$/,
-            %(  sha256 "#{sha256}")
+          replace!(
+            text,
+            /^[ \t]*sha256[ \t]+"[^"]+"$/,
+            %(  sha256 "#{sha256}"),
+            "checksum"
           )
 
-          text.sub!(
-            /^\s*url\s+"[^"]+",\s*$/,
-            %(  url "#{interpolated_url}",)
+          # Remove deprecated `verified:` parameter if present (handles both
+          # comma-terminated url with next-line verified and standalone).
+          text.sub!(/,\s*\n\s*verified:\s+"[^"]+"/, "")
+
+          replace!(
+            text,
+            /^[ \t]*url[ \t]+"[^"]+"$/,
+            %(  url "#{interpolated_url}"),
+            "url"
           )
+
+          # Ensure style-compliant grouping: exactly one blank line between sha256 and url.
+          text.sub!(/(sha256 "[^"]+")\n  url/, "\\1\n\n  url")
 
           File.write(file, text)
           RUBY
@@ -147,7 +165,7 @@ jobs:
       - name: Commit and push
         if: steps.changes.outputs.changed == 'true'
         env:
-          VERSION: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
