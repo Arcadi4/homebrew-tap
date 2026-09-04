@@ -18,6 +18,7 @@ brew install <name>
 
 | Name | Description |
 | --- | --- |
+| `bililive-cli` | Follow bilibili live streams from your terminal. |
 | `cliproxyapi-yumetsuki` | More stable branch of CLIProxyAPI maintained by [@Hoshino-Yumetsuki](https://github.com/Hoshino-Yumetsuki). |
 | `headroom` | Local context compression proxy for LLM applications. |
 | `kiro.rs` | Anthropic-compatible API proxy service for Kiro. |
