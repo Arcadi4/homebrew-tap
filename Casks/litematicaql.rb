@@ -1,6 +1,6 @@
 cask "litematicaql" do
-  version "0.1.7"
-  sha256 "7f2db74ebc50530457c78478ffdcfccb087d3e82afd37446242eafb7ac211d56"
+  version "1.0.0"
+  sha256 "e5685fda0138afa4e5f9786b67d73e7f4b5c9e945f2a72e5d307e0fa5cf29477"
 
   url "https://github.com/Arcadi4/LitematicaQL/releases/download/v#{version}/LitematicaQL-#{version}.zip"
   name "LitematicaQL"
