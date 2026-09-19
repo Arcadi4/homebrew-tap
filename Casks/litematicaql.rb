@@ -1,8 +1,11 @@
 cask "litematicaql" do
-  version "1.0.0"
-  sha256 "e5685fda0138afa4e5f9786b67d73e7f4b5c9e945f2a72e5d307e0fa5cf29477"
+  arch arm: "arm64", intel: "x86_64"
 
-  url "https://github.com/Arcadi4/LitematicaQL/releases/download/v#{version}/LitematicaQL-#{version}.zip"
+  version "1.1.0"
+  sha256 arm:   "ba0d2214caa672d9e6912d8ea497c751d7a64b894e8906e43003e90e339e7c35",
+         intel: "543a8ce70ce04648ecc384da0133d6eddd333c7036d386c3da02492561bf2e02"
+
+  url "https://github.com/Arcadi4/LitematicaQL/releases/download/v#{version}/LitematicaQL-v#{version}-#{arch}.zip"
   name "LitematicaQL"
   desc "Quick Look preview extension for Litematica schematics"
   homepage "https://github.com/Arcadi4/LitematicaQL"
