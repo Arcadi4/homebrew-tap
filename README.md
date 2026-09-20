@@ -23,7 +23,6 @@ brew install <name>
 | [`headroom`](https://github.com/headroomlabs-ai/headroom) | Local context compression proxy for LLM applications. |
 | [`kiro.rs`](https://github.com/Hoshino-Yumetsuki/kiro.rs) | Anthropic-compatible API proxy service for Kiro. |
 | [`markitdown`](https://github.com/microsoft/markitdown) | Convert files to Markdown for LLMs and text analysis. |
-| [`pnpm@12`](https://github.com/pnpm/pnpm) | Fast, disk space efficient package manager (v12 release candidates). |
 | [`schematic-diff`](https://github.com/Arcadi4/schematic-diff) | Git diff extension for Minecraft schematic and NBT files. |
 
 ## Casks
