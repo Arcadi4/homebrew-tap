@@ -1,0 +1,169 @@
+name: Update litematicaql cask
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Specific LitematicaQL version to publish (leave blank for latest)"
+        required: false
+        type: string
+  schedule:
+    - cron: "15 7,22 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-cask:
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out tap
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Fetch latest release metadata
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: Arcadi4/LitematicaQL
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${REQUESTED_VERSION}" ]; then
+            tag_to_fetch="v${REQUESTED_VERSION#v}"
+            release_json="$(gh api "repos/${REPO}/releases/tags/${tag_to_fetch}")"
+          else
+            gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "repos/${REPO}/releases" > releases.json
+
+            release_json="$(
+              jq -cer '
+                map(
+                  select(.draft == false and .prerelease == false)
+                  | .tag_name as $tag
+                  | select(
+                      any(.assets[]?; .name == "LitematicaQL-\($tag)-arm64.zip") and
+                      any(.assets[]?; .name == "LitematicaQL-\($tag)-x86_64.zip")
+                    )
+                )
+                | first // empty
+              ' releases.json
+            )"
+          fi
+
+          if [ -z "$release_json" ] || [ "$release_json" = "null" ]; then
+            echo "No eligible release with arm64 and x86_64 assets found." >&2
+            exit 1
+          fi
+
+          tag="$(jq -r '.tag_name' <<<"$release_json")"
+          version="${tag#v}"
+
+          arm_asset_name="LitematicaQL-${tag}-arm64.zip"
+          intel_asset_name="LitematicaQL-${tag}-x86_64.zip"
+
+          get_digest() {
+            local asset_name="$1"
+            local asset
+            asset="$(jq -cer --arg name "$asset_name" '.assets[] | select(.name == $name)' <<<"$release_json")"
+            local digest
+            digest="$(jq -r '.digest // empty' <<<"$asset")"
+            if [ -z "$digest" ]; then
+              local url
+              url="$(jq -r '.browser_download_url' <<<"$asset")"
+              echo "Release asset digest is missing for ${asset_name}, computing from download..." >&2
+              digest="sha256:$(curl -sSL "$url" | shasum -a 256 | cut -d' ' -f1)"
+            fi
+            if [[ "$digest" != sha256:* ]]; then
+              echo "Unexpected digest format for ${asset_name}: ${digest}" >&2
+              exit 1
+            fi
+            echo "${digest#sha256:}"
+          }
+
+          arm_sha256="$(get_digest "$arm_asset_name")"
+          intel_sha256="$(get_digest "$intel_asset_name")"
+
+          {
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "arm_sha256=$arm_sha256"
+            echo "intel_sha256=$intel_sha256"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update cask file
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          ARM_SHA256: ${{ steps.release.outputs.arm_sha256 }}
+          INTEL_SHA256: ${{ steps.release.outputs.intel_sha256 }}
+          CASK_FILE: Casks/litematicaql.rb
+        run: |
+          set -euo pipefail
+
+          ruby <<'RUBY'
+          file = ENV.fetch("CASK_FILE")
+          version = ENV.fetch("VERSION")
+          arm_sha256 = ENV.fetch("ARM_SHA256")
+          intel_sha256 = ENV.fetch("INTEL_SHA256")
+
+          text = File.read(file)
+
+          def replace!(text, pattern, replacement, description)
+            text.sub!(pattern, replacement) || abort("Could not update #{description} in cask file.")
+          end
+
+          replace!(
+            text,
+            /^[ \t]*version[ \t]+"[^"]+"$/,
+            %(  version "#{version}"),
+            "version"
+          )
+
+          replace!(
+            text,
+            /^[ \t]*sha256[ \t]+arm:[ \t]+"[0-9a-f]{64}",\n[ \t]*intel:[ \t]+"[0-9a-f]{64}"$/,
+            %(  sha256 arm:   "#{arm_sha256}",\n         intel: "#{intel_sha256}"),
+            "checksums"
+          )
+
+          File.write(file, text)
+          RUBY
+
+      - name: Audit cask
+        run: |
+          brew style --cask arcadi4/tap/litematicaql
+          brew audit --cask --online arcadi4/tap/litematicaql
+
+      - name: Check for changes
+        id: changes
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- Casks/litematicaql.rb; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected:"
+            git diff -- Casks/litematicaql.rb
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/litematicaql.rb
+          git commit -m "Bump litematicaql to ${VERSION}"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
