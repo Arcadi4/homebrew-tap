@@ -20,6 +20,7 @@ brew install <name>
 | --- | --- |
 | [`bililive-cli`](https://github.com/Arcadi4/bililive-cli) | Follow bilibili live streams from your terminal. |
 | [`cliproxyapi-yumetsuki`](https://github.com/Hoshino-Yumetsuki/CLIProxyAPI) | More stable branch of CLIProxyAPI maintained by [@Hoshino-Yumetsuki](https://github.com/Hoshino-Yumetsuki). |
+| [`git-fame`](https://github.com/casperdcl/git-fame) | Pretty-print git repository collaborators sorted by contributions. |
 | [`headroom`](https://github.com/headroomlabs-ai/headroom) | Local context compression proxy for LLM applications. |
 | [`kiro.rs`](https://github.com/Hoshino-Yumetsuki/kiro.rs) | Anthropic-compatible API proxy service for Kiro. |
 | [`markitdown`](https://github.com/microsoft/markitdown) | Convert files to Markdown for LLMs and text analysis. |
