@@ -5,23 +5,23 @@ class BililiveCli < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/Arcadi4/bililive-cli/releases/download/v0.1.0/bililive_v0.1.0_darwin_arm64.tar.gz"
-      sha256 "744f5c2def9f160a2c91b27a8975704d8e0e22b9519d96753a84045747ebe755"
+      url "https://github.com/Arcadi4/bililive-cli/releases/download/v0.1.1/bililive_v0.1.1_darwin_arm64.tar.gz"
+      sha256 "3aa41041a45340c5fd9836ee7885d511ae542d15439c6a67a3f5e53a45ad807d"
     end
     on_intel do
-      url "https://github.com/Arcadi4/bililive-cli/releases/download/v0.1.0/bililive_v0.1.0_darwin_amd64.tar.gz"
-      sha256 "8255b55e3c2235d8946064491614570e4a9aee5a65ee838cd3c9a507b1574519"
+      url "https://github.com/Arcadi4/bililive-cli/releases/download/v0.1.1/bililive_v0.1.1_darwin_amd64.tar.gz"
+      sha256 "d06950c37d39d78865adf1575fed552dc0c9f3d2ec802658888034b557d8d4e3"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/Arcadi4/bililive-cli/releases/download/v0.1.0/bililive_v0.1.0_linux_arm64.tar.gz"
-      sha256 "40c4a958a285ee354c1c55897abda2595a8f4c3398c1421896000ec4b9ed83c5"
+      url "https://github.com/Arcadi4/bililive-cli/releases/download/v0.1.1/bililive_v0.1.1_linux_arm64.tar.gz"
+      sha256 "21962d4009fe8d83af6bbe0fa2727574e81c0386f361c38d613c11aa48af8108"
     end
     on_intel do
-      url "https://github.com/Arcadi4/bililive-cli/releases/download/v0.1.0/bililive_v0.1.0_linux_amd64.tar.gz"
-      sha256 "6664e4b3ad02edbdfb1b1cc97161c4cf897f2fc469baff94676f97b5dc258156"
+      url "https://github.com/Arcadi4/bililive-cli/releases/download/v0.1.1/bililive_v0.1.1_linux_amd64.tar.gz"
+      sha256 "f7911dc3142659a5bc2370dfc17f59f3f0046bed8325ff4c7c45f9b7031d9257"
     end
   end
 
