@@ -7,8 +7,6 @@ on:
         description: "Specific schematic-diff version to publish (leave blank for latest)"
         required: false
         type: string
-  schedule:
-    - cron: "0 8,23 * * *"
 
 permissions:
   contents: write

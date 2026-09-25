@@ -1,10 +1,10 @@
-name: Update litematicaql cask
+name: Update bililive-cli formula
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Specific LitematicaQL version to publish (leave blank for latest)"
+        description: "Specific bililive-cli version to publish (leave blank for latest)"
         required: false
         type: string
 
@@ -12,8 +12,8 @@ permissions:
   contents: write
 
 jobs:
-  update-cask:
-    runs-on: macos-latest
+  update-formula:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out tap
@@ -28,7 +28,7 @@ jobs:
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: Arcadi4/LitematicaQL
+          REPO: Arcadi4/bililive-cli
           REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
@@ -48,8 +48,10 @@ jobs:
                   select(.draft == false and .prerelease == false)
                   | .tag_name as $tag
                   | select(
-                      any(.assets[]?; .name == "LitematicaQL-\($tag)-arm64.zip") and
-                      any(.assets[]?; .name == "LitematicaQL-\($tag)-x86_64.zip")
+                      any(.assets[]?; .name == "bililive_\($tag)_darwin_arm64.tar.gz") and
+                      any(.assets[]?; .name == "bililive_\($tag)_darwin_amd64.tar.gz") and
+                      any(.assets[]?; .name == "bililive_\($tag)_linux_arm64.tar.gz") and
+                      any(.assets[]?; .name == "bililive_\($tag)_linux_amd64.tar.gz")
                     )
                 )
                 | first // empty
@@ -58,15 +60,12 @@ jobs:
           fi
 
           if [ -z "$release_json" ] || [ "$release_json" = "null" ]; then
-            echo "No eligible release with arm64 and x86_64 assets found." >&2
+            echo "No eligible release with all 4 target assets found." >&2
             exit 1
           fi
 
           tag="$(jq -r '.tag_name' <<<"$release_json")"
           version="${tag#v}"
-
-          arm_asset_name="LitematicaQL-${tag}-arm64.zip"
-          intel_asset_name="LitematicaQL-${tag}-x86_64.zip"
 
           get_digest() {
             local asset_name="$1"
@@ -87,71 +86,80 @@ jobs:
             echo "${digest#sha256:}"
           }
 
-          arm_sha256="$(get_digest "$arm_asset_name")"
-          intel_sha256="$(get_digest "$intel_asset_name")"
+          macos_arm_sha256="$(get_digest "bililive_${tag}_darwin_arm64.tar.gz")"
+          macos_intel_sha256="$(get_digest "bililive_${tag}_darwin_amd64.tar.gz")"
+          linux_arm_sha256="$(get_digest "bililive_${tag}_linux_arm64.tar.gz")"
+          linux_intel_sha256="$(get_digest "bililive_${tag}_linux_amd64.tar.gz")"
 
           {
             echo "tag=$tag"
             echo "version=$version"
-            echo "arm_sha256=$arm_sha256"
-            echo "intel_sha256=$intel_sha256"
+            echo "macos_arm_sha256=$macos_arm_sha256"
+            echo "macos_intel_sha256=$macos_intel_sha256"
+            echo "linux_arm_sha256=$linux_arm_sha256"
+            echo "linux_intel_sha256=$linux_intel_sha256"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Update cask file
+      - name: Update formula file
         env:
-          VERSION: ${{ steps.release.outputs.version }}
-          ARM_SHA256: ${{ steps.release.outputs.arm_sha256 }}
-          INTEL_SHA256: ${{ steps.release.outputs.intel_sha256 }}
-          CASK_FILE: Casks/litematicaql.rb
+          TAG: ${{ steps.release.outputs.tag }}
+          MACOS_ARM_SHA256: ${{ steps.release.outputs.macos_arm_sha256 }}
+          MACOS_INTEL_SHA256: ${{ steps.release.outputs.macos_intel_sha256 }}
+          LINUX_ARM_SHA256: ${{ steps.release.outputs.linux_arm_sha256 }}
+          LINUX_INTEL_SHA256: ${{ steps.release.outputs.linux_intel_sha256 }}
+          FORMULA_FILE: Formula/bililive-cli.rb
         run: |
           set -euo pipefail
 
           ruby <<'RUBY'
-          file = ENV.fetch("CASK_FILE")
-          version = ENV.fetch("VERSION")
-          arm_sha256 = ENV.fetch("ARM_SHA256")
-          intel_sha256 = ENV.fetch("INTEL_SHA256")
+          file = ENV.fetch("FORMULA_FILE")
+          tag = ENV.fetch("TAG")
+          macos_arm_sha256 = ENV.fetch("MACOS_ARM_SHA256")
+          macos_intel_sha256 = ENV.fetch("MACOS_INTEL_SHA256")
+          linux_arm_sha256 = ENV.fetch("LINUX_ARM_SHA256")
+          linux_intel_sha256 = ENV.fetch("LINUX_INTEL_SHA256")
 
           text = File.read(file)
 
-          def replace!(text, pattern, replacement, description)
-            text.sub!(pattern, replacement) || abort("Could not update #{description} in cask file.")
+          def update_asset!(text, suffix, new_tag, new_sha256)
+            pattern = /(  url ")[^"]*?bililive_[^"]*?#{Regexp.escape(suffix)}("\n[ \t]*sha256 )"[0-9a-f]{64}"/
+            url = "https://github.com/Arcadi4/bililive-cli/releases/download/#{new_tag}/bililive_#{new_tag}_#{suffix}"
+            text.sub!(pattern, "\\1#{url}\\2\"#{new_sha256}\"") || abort("Could not update the #{suffix} block")
           end
 
-          replace!(
-            text,
-            /^[ \t]*version[ \t]+"[^"]+"$/,
-            %(  version "#{version}"),
-            "version"
-          )
-
-          replace!(
-            text,
-            /^[ \t]*sha256[ \t]+arm:[ \t]+"[0-9a-f]{64}",\n[ \t]*intel:[ \t]+"[0-9a-f]{64}"$/,
-            %(  sha256 arm:   "#{arm_sha256}",\n         intel: "#{intel_sha256}"),
-            "checksums"
-          )
+          update_asset!(text, "darwin_arm64.tar.gz", tag, macos_arm_sha256)
+          update_asset!(text, "darwin_amd64.tar.gz", tag, macos_intel_sha256)
+          update_asset!(text, "linux_arm64.tar.gz", tag, linux_arm_sha256)
+          update_asset!(text, "linux_amd64.tar.gz", tag, linux_intel_sha256)
 
           File.write(file, text)
           RUBY
 
-      - name: Audit cask
+      - name: Audit formula
         run: |
-          brew style --cask arcadi4/tap/litematicaql
-          brew audit --cask --online arcadi4/tap/litematicaql
+          brew style --formula arcadi4/tap/bililive-cli
+          brew audit --formula --online arcadi4/tap/bililive-cli
 
       - name: Check for changes
         id: changes
         run: |
           set -euo pipefail
-          if git diff --quiet -- Casks/litematicaql.rb; then
+          if git diff --quiet -- Formula/bililive-cli.rb; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No changes detected."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Changes detected:"
-            git diff -- Casks/litematicaql.rb
+            git diff -- Formula/bililive-cli.rb
           fi
+
+      - name: Install and test formula
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          brew install arcadi4/tap/bililive-cli
+          brew test arcadi4/tap/bililive-cli
+          brew uninstall bililive-cli
 
       - name: Commit and push
         if: steps.changes.outputs.changed == 'true'
@@ -162,6 +170,6 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Casks/litematicaql.rb
-          git commit -m "Bump litematicaql to ${VERSION}"
+          git add Formula/bililive-cli.rb
+          git commit -m "Bump bililive-cli to ${VERSION}"
           git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
