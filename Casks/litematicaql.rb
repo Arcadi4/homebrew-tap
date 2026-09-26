@@ -1,9 +1,9 @@
 cask "litematicaql" do
   arch arm: "arm64", intel: "x86_64"
 
-  version "1.2.3"
-  sha256 arm:   "f850f5e99660a31da24e8432a0000fbb02975bfe62edfc817247c93d8c957ae5",
-         intel: "32da23fb4764cdb3b3de498ea83326dc66ed17b844f1790456c2905010d624ed"
+  version "1.2.4"
+  sha256 arm:   "0c9f563a7bff23b7616e25e54cdb0a70791e5b932315d0ef92e62e21287cd64d",
+         intel: "d3c597ad0f02bc4f0d28ef5e82e0f691caedc55c54000e18ee6907a4578eee1d"
 
   url "https://github.com/Arcadi4/LitematicaQL/releases/download/v#{version}/LitematicaQL-v#{version}-#{arch}.zip"
   name "LitematicaQL"
