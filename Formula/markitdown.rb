@@ -3,8 +3,8 @@ class Markitdown < Formula
 
   desc "Convert files to Markdown for LLMs and text analysis"
   homepage "https://github.com/microsoft/markitdown"
-  url "https://files.pythonhosted.org/packages/11/60/2431842a40975524da12edd4d64dd7dc31ef56e209b4848ebf0b14ad1431/markitdown-0.1.8.tar.gz"
-  sha256 "17188ad827ea79fc264c7b1ca8cf5a242a16278d84cc32f2edc475dbe92812ed"
+  url "https://files.pythonhosted.org/packages/f4/e3/035166ffa9b79c432693e3467f15a0208d863a4b74ca0ef7f40dfd9c5dcd/markitdown-0.1.9.tar.gz"
+  sha256 "8f692236fc104b9251e1b86bdea969c6a1617174fe37eebb78ac6fa62a2894f0"
   license "MIT"
 
   depends_on "python@3.13"
