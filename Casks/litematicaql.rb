@@ -1,9 +1,9 @@
 cask "litematicaql" do
   arch arm: "arm64", intel: "x86_64"
 
-  version "1.5.0"
-  sha256 arm:   "ef93c9489e2440088b486abffd8cbfcd11f9cf59c9d7b7f4ee0e7e41e1a70c38",
-         intel: "bfb3f570ac59b79064fa37ccddbabc3e2386b334069931d5d286f8f1c0a5762a"
+  version "1.5.1"
+  sha256 arm:   "96eb0ef35b53efd7349f55d6619aaf6f129e62488bf3e611faccc461d6d78dcc",
+         intel: "2c3db6e70669519e1d7759e36ee6ba32861df628e4646f0082864d5e7b8bea04"
 
   # The tag keeps its leading v, but `just release` names the archives with the
   # bare version.
