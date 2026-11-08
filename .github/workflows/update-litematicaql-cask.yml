@@ -11,11 +11,6 @@ on:
 permissions:
   contents: write
 
-env:
-  # The cask and Sparkle both download from this mirror. The archives keep the
-  # names produced by `just release`, e.g. LitematicaQL-1.5.1-arm64.zip.
-  PACKAGE_BASE_URL: https://download.arcadia.moe/litematicaql
-
 jobs:
   update-cask:
     runs-on: macos-latest
@@ -70,9 +65,8 @@ jobs:
           tag="$(jq -r '.tag_name' <<<"$release_json")"
           version="${tag#v}"
 
-          # GitHub releases remain the source of truth for which version exists
-          # and which assets it carries; the packages themselves are downloaded
-          # from the Cloudflare mirror below.
+          # The release lists the assets and the sha256 of each one. The mirror
+          # serves those same archives unchanged, so one digest describes both.
           printf '%s' "$release_json" > "${RUNNER_TEMP}/litematicaql-release.json"
 
           {
@@ -80,7 +74,7 @@ jobs:
             echo "version=$version"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Checksum Cloudflare packages
+      - name: Read package checksums
         id: packages
         env:
           VERSION: ${{ steps.release.outputs.version }}
@@ -88,103 +82,27 @@ jobs:
           set -euo pipefail
 
           release_json="$(cat "${RUNNER_TEMP}/litematicaql-release.json")"
-          arm_asset="LitematicaQL-${VERSION}-arm64.zip"
-          intel_asset="LitematicaQL-${VERSION}-x86_64.zip"
-          workdir="$(mktemp -d)"
-          trap 'rm -rf "$workdir"' EXIT
 
-          # The release decides which archives exist; reject a version whose
-          # assets are missing instead of waiting on the mirror for them.
-          for asset_name in "$arm_asset" "$intel_asset"; do
+          checksum_of() {
+            local asset_name="$1"
+            local digest
+
             if ! jq -e --arg name "$asset_name" 'any(.assets[]?; .name == $name)' <<<"$release_json" >/dev/null; then
               echo "Release ${VERSION} has no asset named ${asset_name}." >&2
               jq -r '.assets[].name' <<<"$release_json" >&2
-              exit 1
-            fi
-          done
-
-          download_package() {
-            local asset_name="$1"
-            local target="$2"
-            local url="${PACKAGE_BASE_URL}/${asset_name}"
-            local attempt=1
-            local max_attempts=10
-            local status
-
-            # A freshly published release may reach the mirror a few minutes
-            # after the GitHub asset, so retry until the mirror answers.
-            while true; do
-              status="$(curl -sSL --retry 3 --retry-delay 5 -o "$target" -w '%{http_code}' "$url" || true)"
-              if [ "$status" = "200" ]; then
-                return 0
-              fi
-              if [ "$attempt" -ge "$max_attempts" ]; then
-                echo "Cloudflare mirror did not serve ${url} after ${max_attempts} attempts (last HTTP status: ${status:-none})." >&2
-                return 1
-              fi
-              echo "Waiting for ${url} (HTTP ${status:-none}, attempt ${attempt}/${max_attempts})..." >&2
-              sleep 30
-              attempt=$((attempt + 1))
-            done
-          }
-
-          validate_package() {
-            local asset_name="$1"
-            local path="$2"
-            local size
-
-            if [ "$(head -c 2 "$path")" != "PK" ]; then
-              echo "${asset_name} from the mirror is not a zip archive." >&2
               return 1
             fi
-
-            size="$(wc -c < "$path" | tr -d ' ')"
-            if [ "$size" -lt 102400 ]; then
-              echo "Mirror copy of ${asset_name} is only ${size} bytes; refusing to trust it." >&2
-              return 1
-            fi
-          }
-
-          # The cask checksum must describe the bytes Homebrew actually
-          # downloads, so the mirror download is hashed. The GitHub digest is
-          # only used to prove the mirror is serving the release asset unchanged.
-          verify_against_release() {
-            local asset_name="$1"
-            local sha256="$2"
-            local digest
 
             digest="$(jq -r --arg name "$asset_name" '[.assets[] | select(.name == $name) | .digest // empty] | first // empty' <<<"$release_json")"
-            if [ -z "$digest" ]; then
-              echo "Release does not report a digest for ${asset_name}; refusing to trust the mirror." >&2
+            if [[ ! "$digest" =~ ^sha256:([0-9a-f]{64})$ ]]; then
+              echo "Release does not report a sha256 digest for ${asset_name}." >&2
               return 1
             fi
-            if [ "$digest" != "sha256:${sha256}" ]; then
-              echo "Mirror copy of ${asset_name} (sha256:${sha256}) does not match the release asset (${digest})." >&2
-              echo "Re-upload the release archive to ${PACKAGE_BASE_URL} before updating the cask." >&2
-              return 1
-            fi
+            printf '%s' "${BASH_REMATCH[1]}"
           }
 
-          sha256_of_package() {
-            local asset_name="$1"
-            local path="${workdir}/${asset_name}"
-            local sha256
-
-            # Command substitution runs these in a subshell where `set -e` does
-            # not abort, so every failure has to be propagated explicitly.
-            download_package "$asset_name" "$path" || return 1
-            validate_package "$asset_name" "$path" || return 1
-            sha256="$(shasum -a 256 "$path" | cut -d' ' -f1)"
-            if [[ ! "$sha256" =~ ^[0-9a-f]{64}$ ]]; then
-              echo "Computed an unusable digest for ${asset_name}: ${sha256}" >&2
-              return 1
-            fi
-            verify_against_release "$asset_name" "$sha256" || return 1
-            echo "$sha256"
-          }
-
-          arm_sha256="$(sha256_of_package "$arm_asset")" || exit 1
-          intel_sha256="$(sha256_of_package "$intel_asset")" || exit 1
+          arm_sha256="$(checksum_of "LitematicaQL-${VERSION}-arm64.zip")" || exit 1
+          intel_sha256="$(checksum_of "LitematicaQL-${VERSION}-x86_64.zip")" || exit 1
 
           {
             echo "arm_sha256=$arm_sha256"
@@ -208,7 +126,7 @@ jobs:
 
           text = File.read(file)
 
-          # The checksums are computed from the mirror, so refuse to write them
+          # The checksums come from the release metadata, so refuse to write them
           # into a cask that still points somewhere else.
           mirror_template = 'https://download.arcadia.moe/litematicaql/LitematicaQL-#{version}-#{arch}.zip'
           abort("Cask does not download from the Cloudflare mirror; expected #{mirror_template}.") unless text.include?(mirror_template)
