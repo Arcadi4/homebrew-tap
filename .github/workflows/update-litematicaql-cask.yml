@@ -155,7 +155,9 @@ jobs:
       - name: Audit cask
         run: |
           brew style --cask arcadi4/tap/litematicaql
-          brew audit --cask --online arcadi4/tap/litematicaql
+          # The online audit downloads the cask URL, and Cloudflare answers CI
+          # runners with a bot challenge.
+          brew audit --cask arcadi4/tap/litematicaql
 
       - name: Check for changes
         id: changes
