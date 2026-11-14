@@ -1,9 +1,9 @@
 cask "litematicaql" do
   arch arm: "arm64", intel: "x86_64"
 
-  version "1.5.3"
-  sha256 arm:   "19e4c755e05233cccec4984ecb7d04b59a39d5838ed3bcbf344b36c8091bb548",
-         intel: "2f772b22c615fdba8ca9d6aa04f5947ecea5fcd4fb3cf0987889ffba39f9dc85"
+  version "1.5.4"
+  sha256 arm:   "72435203d6753ca499b61cd1e7eb0b5b5e99a9b337b726d47a188e84088a7854",
+         intel: "000795f41a21609ba87d8cd79d7e4d3cd4b8c2463f1f1e12d9a9835e0456dec1"
 
   # Packages are built by `just release`, which names the archives with the bare
   # version even though the tag keeps its leading v. The Cloudflare mirror serves
