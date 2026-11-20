@@ -5,23 +5,23 @@ class SchematicDiff < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/Arcadi4/schematic-diff/releases/download/v0.4.1/schematic-diff-aarch64-apple-darwin.tar.gz"
-      sha256 "ba86381dbfaa27b94b1e853b1cb7d8b65f2145a4307c35de9c655eed4400cb08"
+      url "https://github.com/Arcadi4/schematic-diff/releases/download/v0.4.2/schematic-diff-aarch64-apple-darwin.tar.gz"
+      sha256 "5211dd240223e31d45f47e67cc3c0e5c8acbca0ccfcceaebb2cbef6ecdd19a06"
     end
     on_intel do
-      url "https://github.com/Arcadi4/schematic-diff/releases/download/v0.4.1/schematic-diff-x86_64-apple-darwin.tar.gz"
-      sha256 "a141d95f47afa845b0a4bb06ce631ce38665566497785950c3c0e940d3c7d2be"
+      url "https://github.com/Arcadi4/schematic-diff/releases/download/v0.4.2/schematic-diff-x86_64-apple-darwin.tar.gz"
+      sha256 "fa3ee664418df1b68910733e74b239b5df09b7d7d02cdd5d95e78f7f4d68c1a6"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/Arcadi4/schematic-diff/releases/download/v0.4.1/schematic-diff-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "51eed9690e9a5795c34b0d1a6594475aa1a6134a36ff312faf09d600565b881c"
+      url "https://github.com/Arcadi4/schematic-diff/releases/download/v0.4.2/schematic-diff-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "018e82bff20819c8c246edfffd46ebfd695a1cb273c2b59e12de429e022b4ad7"
     end
     on_intel do
-      url "https://github.com/Arcadi4/schematic-diff/releases/download/v0.4.1/schematic-diff-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "ee706c8d8fc9bfcef41a81b2a4e28b45db0ae5736c1e9304659eedcb8af80621"
+      url "https://github.com/Arcadi4/schematic-diff/releases/download/v0.4.2/schematic-diff-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "0059f007ce639dadb62f7bfc9d925840cbf253d49c7e063a626010cc982c475f"
     end
   end
 
