@@ -41,6 +41,6 @@ class GitFame < Formula
     system "git", "-c", "user.name=Homebrew Test", "-c", "user.email=test@example.com",
            "commit", "-m", "Initial commit"
     assert_match "Homebrew Test", shell_output(bin/"git-fame")
-    assert_match version.to_s, shell_output("#{bin/"git-fame"} --version")
+    assert_match version.to_s, shell_output("#{bin}/git-fame --version")
   end
 end
